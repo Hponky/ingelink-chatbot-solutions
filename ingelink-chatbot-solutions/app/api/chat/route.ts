@@ -23,11 +23,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true });
     }
 
-    // Case 2: Direct response format from n8n (nuevo formato)
+    // Case 2: Direct response format from n8n
     if (body.response) {
       const aiReply = body.response;
       
-      // Create a properly formatted message
       const formattedMessage = {
         role: 'model' as const,
         parts: [{ text: aiReply }]
@@ -37,11 +36,42 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true });
     }
 
-    // Case 3: Array format from n8n (formato anterior)
+    // Case 3: Direct candidates format (nuevo formato actual)
+    if (body.candidates && Array.isArray(body.candidates) && body.candidates.length > 0) {
+      const candidate = body.candidates[0];
+      if (candidate.content && candidate.content.parts && candidate.content.parts.length > 0) {
+        const aiReply = candidate.content.parts[0].text;
+        
+        const formattedMessage = {
+          role: 'model' as const,
+          parts: [{ text: aiReply }]
+        };
+        
+        await pusher.trigger('chat-channel', 'new-message', formattedMessage);
+        return NextResponse.json({ success: true });
+      }
+    }
+
+    // Case 4: Array format with candidates structure
+    if (Array.isArray(body) && body.length > 0 && body[0].candidates) {
+      const candidates = body[0].candidates;
+      if (candidates && candidates.length > 0 && candidates[0].content && candidates[0].content.parts) {
+        const aiReply = candidates[0].content.parts[0].text;
+        
+        const formattedMessage = {
+          role: 'model' as const,
+          parts: [{ text: aiReply }]
+        };
+        
+        await pusher.trigger('chat-channel', 'new-message', formattedMessage);
+        return NextResponse.json({ success: true });
+      }
+    }
+
+    // Case 5: Array format with direct response
     if (Array.isArray(body) && body.length > 0 && body[0].response) {
       const aiReply = body[0].response;
       
-      // Create a properly formatted message
       const formattedMessage = {
         role: 'model' as const,
         parts: [{ text: aiReply }]
@@ -51,7 +81,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true });
     }
     
-    // Fallback for simple reply format (mantener compatibilidad)
+    // Case 6: Simple reply format (mantener compatibilidad)
     if (body.reply) {
       const formattedMessage = {
         role: 'model' as const,
