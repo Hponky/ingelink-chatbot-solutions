@@ -23,9 +23,23 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true });
     }
 
-    // Case 2: Asynchronous response from n8n with the AI's reply
-    if (body.candidates && body.candidates[0]?.content?.parts?.[0]?.text) {
-      const aiReply = body.candidates[0].content.parts[0].text;
+    // Case 2: Direct response format from n8n (nuevo formato)
+    if (body.response) {
+      const aiReply = body.response;
+      
+      // Create a properly formatted message
+      const formattedMessage = {
+        role: 'model' as const,
+        parts: [{ text: aiReply }]
+      };
+      
+      await pusher.trigger('chat-channel', 'new-message', formattedMessage);
+      return NextResponse.json({ success: true });
+    }
+
+    // Case 3: Array format from n8n (formato anterior)
+    if (Array.isArray(body) && body.length > 0 && body[0].response) {
+      const aiReply = body[0].response;
       
       // Create a properly formatted message
       const formattedMessage = {
@@ -37,7 +51,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true });
     }
     
-    // Fallback for simple reply format
+    // Fallback for simple reply format (mantener compatibilidad)
     if (body.reply) {
       const formattedMessage = {
         role: 'model' as const,

@@ -9,6 +9,7 @@ type PusherMessageData = {
   role?: 'user' | 'model';
   parts?: [{ text: string }];
   reply?: string;
+  response?: string; // Para el nuevo formato de n8n
 };
 
 export const useChat = () => {
@@ -42,6 +43,12 @@ export const useChat = () => {
           role: 'model' as const,
           parts: [{ text: data.reply }]
         };
+      } else if (data.response) {
+        // Convert from new n8n format
+        message = {
+          role: 'model' as const,
+          parts: [{ text: data.response }]
+        };
       } else {
         console.error('Received message in unexpected format:', data);
         return;
@@ -64,19 +71,15 @@ export const useChat = () => {
       parts: [{ text: messageText }],
     };
 
-    // Añade el nuevo mensaje del usuario al historial para actualizar la UI inmediatamente
     const updatedHistory = [...history, newUserMessage];
     setHistory(updatedHistory);
     setIsLoading(true);
 
-    // ¡AQUÍ ESTÁ LA MAGIA!
-    // Llama a tu webhook de n8n enviando el historial completo
     try {
-      const response = await fetch('/api/chat', { // Apunta a tu API de Next.js
+      const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          // La API de Next.js reenviará esto a n8n
           contents: updatedHistory 
         }),
       });
@@ -84,8 +87,6 @@ export const useChat = () => {
       if (!response.ok) {
           throw new Error('Error en la respuesta del servidor');
       }
-
-      // The response will be received via Pusher, so we don't need to do anything here
 
     } catch (error) {
       console.error("Error contacting the chatbot:", error);
