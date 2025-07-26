@@ -5,7 +5,7 @@ import { ChatMessages } from './ChatMessages';
 import { ChatInput } from './ChatInput';
 
 export function ChatWindow() {
-  const { messages, isLoading, typingMessage, handleSendMessage, clearChat } = useChat();
+  const { history, isLoading, handleSendMessage, clearChat } = useChat();
 
   return (
     <div className="flex flex-col h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-slate-50 animate-fade-in">
@@ -49,7 +49,7 @@ export function ChatWindow() {
       {/* Messages area */}
       <div className="flex-1 relative overflow-hidden pt-32">
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-slate-900/20 to-transparent pointer-events-none" />
-        <ChatMessages messages={messages} isLoading={isLoading} typingMessage={typingMessage} />
+        <ChatMessages messages={history} isLoading={isLoading} />
       </div>
 
       {/* Input area */}

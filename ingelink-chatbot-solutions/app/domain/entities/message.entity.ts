@@ -1,6 +1,4 @@
-export interface Message {
-  id: string;
-  text: string;
-  sender: 'user' | 'ai' | 'assistant';
-  timestamp: Date;
-}
+export type Message = {
+  role: 'user' | 'model';
+  parts: [{ text: string }];
+};

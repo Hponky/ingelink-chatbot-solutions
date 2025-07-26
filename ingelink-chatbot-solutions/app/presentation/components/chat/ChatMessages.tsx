@@ -5,10 +5,9 @@ import { useEffect, useRef, useState } from 'react';
 interface ChatMessagesProps {
   messages: Message[];
   isLoading?: boolean;
-  typingMessage?: string;
 }
 
-export function ChatMessages({ messages, isLoading, typingMessage }: ChatMessagesProps) {
+export function ChatMessages({ messages, isLoading }: ChatMessagesProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [showScrollIndicator, setShowScrollIndicator] = useState(false);
@@ -89,9 +88,9 @@ export function ChatMessages({ messages, isLoading, typingMessage }: ChatMessage
         <div className="max-w-4xl mx-auto space-y-4">
         {messages.map((msg, index) => (
           <div
-            key={msg.id}
+            key={index}
             className={`animate-fade-in ${
-              msg.sender === 'user' ? 'animate-slide-in-right' : 'animate-slide-in-left'
+              msg.role === 'user' ? 'animate-slide-in-right' : 'animate-slide-in-left'
             }`}
             style={{ animationDelay: `${index * 0.1}s` }}
           >
@@ -100,7 +99,7 @@ export function ChatMessages({ messages, isLoading, typingMessage }: ChatMessage
         ))}
         
         {/* Typing indicator */}
-        {(isLoading || typingMessage) && (
+        {isLoading && (
           <div className="flex items-start space-x-3 animate-fadeIn">
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center flex-shrink-0">
               <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
@@ -109,16 +108,7 @@ export function ChatMessages({ messages, isLoading, typingMessage }: ChatMessage
             </div>
             <div className="flex-1 max-w-xs lg:max-w-md">
               <div className="bg-slate-800/60 backdrop-blur-sm border border-slate-700/50 rounded-2xl rounded-bl-md p-4 glass-morphism">
-                {typingMessage ? (
-                  <div className="flex items-center space-x-2">
-                    <div className="flex space-x-1">
-                      <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                      <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                      <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-                    </div>
-                    <span className="text-sm text-slate-300 animate-pulse">{typingMessage}</span>
-                  </div>
-                ) : (
+                {
                   <div className="flex items-center space-x-1">
                     <div className="flex space-x-1">
                       <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
@@ -127,7 +117,7 @@ export function ChatMessages({ messages, isLoading, typingMessage }: ChatMessage
                     </div>
                     <span className="text-xs text-slate-400 ml-2">Escribiendo...</span>
                   </div>
-                )}
+                }
               </div>
             </div>
           </div>

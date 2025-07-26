@@ -1,23 +1,13 @@
 'use client';
 
 import { Message } from '@/app/domain/entities/message.entity';
-import { useEffect, useState } from 'react';
 
 interface ChatMessageProps {
   message: Message;
 }
 
 export function ChatMessage({ message }: ChatMessageProps) {
-  const [time, setTime] = useState('');
-
-  useEffect(() => {
-    setTime(new Date(message.timestamp).toLocaleTimeString([], { 
-      hour: '2-digit', 
-      minute: '2-digit' 
-    }));
-  }, [message.timestamp]);
-
-  const isUser = message.sender === 'user';
+  const isUser = message.role === 'user';
 
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-4`}>
@@ -45,23 +35,9 @@ export function ChatMessage({ message }: ChatMessageProps) {
             ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-br-md'
             : 'glass text-slate-100 rounded-bl-md border border-slate-700/50'
         }`}>
-          <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.text}</p>
+          <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.parts[0].text}</p>
           
-          {/* Timestamp */}
-          <div className={`flex items-center mt-2 space-x-1 ${
-            isUser ? 'justify-end' : 'justify-start'
-          }`}>
-            <span className={`text-xs ${
-              isUser ? 'text-indigo-200' : 'text-slate-400'
-            }`}>
-              {time}
-            </span>
-            {isUser && (
-              <svg className="w-3 h-3 text-indigo-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-            )}
-          </div>
+
 
           {/* Message tail */}
           <div className={`absolute top-4 w-3 h-3 transform rotate-45 ${
