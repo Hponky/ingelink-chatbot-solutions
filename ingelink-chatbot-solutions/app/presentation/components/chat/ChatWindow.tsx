@@ -10,7 +10,7 @@ export function ChatWindow() {
   return (
     <div className="flex flex-col h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-slate-50 animate-fade-in">
       {/* Header with glass morphism effect */}
-      <header className="fixed top-0 left-0 right-0 z-50 glass border-b border-slate-700/50 p-6 backdrop-blur-xl">
+      <header className="fixed top-0 left-0 right-0 z-50 glass border-b border-slate-700/50 p-4 backdrop-blur-xl">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <div className="w-8 h-8 bg-gradient-to-r from-indigo-500 to-cyan-500 rounded-lg flex items-center justify-center">
@@ -32,7 +32,7 @@ export function ChatWindow() {
           <div className="flex items-center space-x-2">
             <button
               onClick={clearChat}
-              className="p-2 text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 rounded-lg transition-all duration-200 hover-lift"
+              className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 rounded-lg transition-all duration-200 hover-lift"
               title="Limpiar conversación"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -47,8 +47,7 @@ export function ChatWindow() {
       </header>
 
       {/* Messages area */}
-      <div className="flex-1 relative overflow-hidden pt-32">
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-slate-900/20 to-transparent pointer-events-none" />
+      <div className="flex-1 relative overflow-hidden pt-22">
         <ChatMessages messages={history} isLoading={isLoading} />
       </div>
 

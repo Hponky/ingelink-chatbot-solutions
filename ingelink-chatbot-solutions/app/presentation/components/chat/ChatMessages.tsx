@@ -83,7 +83,7 @@ export function ChatMessages({ messages, isLoading }: ChatMessagesProps) {
       <div 
         ref={scrollContainerRef}
         className="flex-1 overflow-y-auto p-6 space-y-4 scroll-container"
-        style={{ height: 'calc(100vh - 320px)', minHeight: '400px' }}
+        style={{ height: 'calc(100vh - 220px)', minHeight: '500px' }}
       >
         <div className="max-w-4xl mx-auto space-y-4">
         {messages.map((msg, index) => (

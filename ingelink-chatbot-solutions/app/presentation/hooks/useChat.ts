@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
-import { Message } from '@/app/domain/entities/message.entity';
+import { Message, ChatApiRequestBody } from '@/app/domain/entities/message.entity';
 import Pusher from 'pusher-js';
 
 // Define the type for the data received from Pusher
@@ -15,6 +15,7 @@ type PusherMessageData = {
 export const useChat = () => {
   const [history, setHistory] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [engine, setEngine] = useState<'n8n' | 'langchain'>('n8n'); // <-- Nuevo estado para el motor
 
   useEffect(() => {
     // Initial welcome message
@@ -76,23 +77,39 @@ export const useChat = () => {
     setIsLoading(true);
 
     try {
+      const requestBody: ChatApiRequestBody = {
+        engine: engine,
+        query: messageText,
+        history: history, // Enviamos el historial *antes* del nuevo mensaje
+      };
+
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: updatedHistory 
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       if (!response.ok) {
-          throw new Error('Error en la respuesta del servidor');
+        throw new Error('Error en la respuesta del servidor');
       }
+
+      // Si el motor es LangChain, la respuesta viene directamente en el HTTP
+      if (engine === 'langchain') {
+        const data = await response.json();
+        const aiMessage: Message = {
+          role: 'model',
+          parts: [{ text: data.reply }],
+        };
+        setHistory(prevHistory => [...prevHistory, aiMessage]);
+        setIsLoading(false);
+      }
+      // Si el motor es n8n, la respuesta llegará por Pusher, así que no hacemos nada aquí.
 
     } catch (error) {
       console.error("Error contacting the chatbot:", error);
       const errorMessage: Message = {
-          role: 'model',
-          parts: [{ text: 'Lo siento, estoy teniendo problemas para conectarme. Por favor, intenta de nuevo más tarde.' }] 
+        role: 'model',
+        parts: [{ text: 'Lo siento, estoy teniendo problemas para conectarme. Por favor, intenta de nuevo más tarde.' }]
       };
       setHistory(prevHistory => [...prevHistory, errorMessage]);
       setIsLoading(false);
@@ -114,5 +131,7 @@ export const useChat = () => {
     isLoading,
     handleSendMessage,
     clearChat,
+    engine,    // <-- Exportamos el estado y el setter
+    setEngine, // <-- para que puedas crear un botón en la UI
   };
 };
