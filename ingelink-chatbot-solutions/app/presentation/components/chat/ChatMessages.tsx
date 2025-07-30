@@ -1,18 +1,80 @@
-import { Message } from '@/app/domain/entities/message.entity';
+import { Message } from '../../../domain/entities/message.entity';
 import { ChatMessage } from './ChatMessage';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, RefObject } from 'react';
+import { useResponsiveButtonPositioning } from '@/hooks/useResponsiveButtonPositioning';
 
 interface ChatMessagesProps {
   messages: Message[];
   isLoading?: boolean;
+  hasSuggestedQuestions?: boolean;
+  suggestedQuestionsRef?: RefObject<HTMLDivElement | null>;
 }
 
-export function ChatMessages({ messages, isLoading }: ChatMessagesProps) {
+export function ChatMessages({ 
+  messages, 
+  isLoading, 
+  hasSuggestedQuestions = false, 
+  suggestedQuestionsRef 
+}: ChatMessagesProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [showScrollIndicator, setShowScrollIndicator] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
+  const [containerHeight, setContainerHeight] = useState('calc(100vh - 220px)');
+  const [scrollIndicatorStyle, setScrollIndicatorStyle] = useState({
+    top: '6rem',
+    height: 'calc(100vh - 12rem)'
+  });
+
+  // Calcular altura dinámica basada en si hay preguntas sugeridas
+  useEffect(() => {
+    const calculateHeight = () => {
+      const headerHeight = 80; // Assuming a fixed header height of 80px
+      let availableHeight;
+      let scrollIndicatorHeight;
+
+      if (hasSuggestedQuestions && suggestedQuestionsRef?.current) {
+        const rect = suggestedQuestionsRef.current.getBoundingClientRect();
+        const suggestedQuestionsTop = rect.top;
+        availableHeight = suggestedQuestionsTop - headerHeight;
+        scrollIndicatorHeight = availableHeight;
+      } else {
+        const inputHeight = 100;
+        const padding = 20;
+        availableHeight = window.innerHeight - headerHeight - inputHeight - padding;
+        scrollIndicatorHeight = availableHeight;
+      }
+
+      const finalHeight = Math.max(availableHeight, 400);
+      setContainerHeight(`${finalHeight}px`);
+
+      setScrollIndicatorStyle({
+        top: `${headerHeight}px`, // Starts right after the header
+        height: `${scrollIndicatorHeight}px`
+      });
+    };
+
+    calculateHeight();
+    window.addEventListener('resize', calculateHeight);
+    
+    // Observar cambios en el DOM para recalcular cuando aparezca/desaparezca el FAQ
+    let observer: MutationObserver | null = null;
+    if (suggestedQuestionsRef?.current) {
+      observer = new MutationObserver(calculateHeight);
+      observer.observe(document.body, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ['style', 'class']
+      });
+    }
+    
+    return () => {
+      window.removeEventListener('resize', calculateHeight);
+      observer?.disconnect();
+    };
+  }, [hasSuggestedQuestions, suggestedQuestionsRef]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -36,7 +98,7 @@ export function ChatMessages({ messages, isLoading }: ChatMessagesProps) {
       const totalScrollable = scrollHeight - clientHeight;
       
       if (totalScrollable > 0) {
-        const progress = (scrollTop / totalScrollable) * 100;
+        const progress = Math.min((scrollTop / totalScrollable) * 100, 100);
         setScrollProgress(progress);
         setShowScrollIndicator(totalScrollable > 50);
         
@@ -55,23 +117,33 @@ export function ChatMessages({ messages, isLoading }: ChatMessagesProps) {
     return () => container.removeEventListener('scroll', handleScroll);
   }, [messages]);
 
+  const { positions } = useResponsiveButtonPositioning(true); // Chat siempre abierto aquí
+
   return (
     <div className="flex-1 relative">
       {/* Scroll fade effects */}
       <div className="scroll-fade-top" />
       <div className="scroll-fade-bottom" />
       
-      {/* Scroll indicator */}
-       <div 
-         className={`scroll-indicator ${showScrollIndicator ? 'visible' : ''}`}
-         style={{ '--scroll-progress': `${scrollProgress}%` } as React.CSSProperties}
-       />
+      {/* Scroll indicator con posición dinámica */}
+      <div 
+        className={`scroll-indicator-dynamic ${showScrollIndicator ? 'visible' : ''}`}
+        style={{ 
+          '--scroll-progress': `${scrollProgress}%`,
+          top: scrollIndicatorStyle.top,
+          height: scrollIndicatorStyle.height
+        } as React.CSSProperties}
+      />
        
-       {/* Scroll to bottom button */}
+       {/* Scroll to bottom button - Posición dinámica */}
        {showScrollToBottom && (
          <button
            onClick={handleScrollToBottom}
-           className="fixed bottom-24 right-6 w-12 h-12 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover-lift z-30 flex items-center justify-center animate-fadeIn"
+           className="fixed w-12 h-12 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover-lift z-30 flex items-center justify-center animate-fadeIn"
+           style={{
+             bottom: positions.scrollToBottom.bottom,
+             right: positions.scrollToBottom.right
+           }}
            title="Ir al final"
          >
            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -82,8 +154,13 @@ export function ChatMessages({ messages, isLoading }: ChatMessagesProps) {
       
       <div 
         ref={scrollContainerRef}
-        className="flex-1 overflow-y-auto p-6 space-y-4 scroll-container"
-        style={{ height: 'calc(100vh - 220px)', minHeight: '500px' }}
+        className={`absolute sm:top-4 md:top-4 lg:top-0 left-0 right-0 overflow-y-auto space-y-4 scroll-container ${
+          hasSuggestedQuestions ? 'pt-6 px-6 pb-8' : 'pt-6 px-6'
+        }`}
+        style={{ 
+          height: containerHeight
+          // minHeight: '400px' // <--- Eliminado para evitar el desbordamiento
+        }}
       >
         <div className="max-w-4xl mx-auto space-y-4">
         {messages.map((msg, index) => (
